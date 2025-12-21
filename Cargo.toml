@@ -1,7 +1,12 @@
 [package]
 name = "entui"
+description = "A file entropy visualization in the terminal with a nice interface"
 version = "0.1.0"
 edition = "2024"
+license = "MIT"
+homepage = "https://github.com/sergiogarciadev/entui"
+repository = "https://github.com/sergiogarciadev/entui.git"
+readme = "README.md"
 
 [dependencies]
 anyhow = "1.0.100"

@@ -1,7 +1,7 @@
-use std::path::Path;
-use std::fs::File;
-use std::io::{self, Read, BufReader};
 use anyhow::Result;
+use std::fs::File;
+use std::io::{BufReader, Read};
+use std::path::Path;
 
 pub fn calculate_shannon_entropy(data: &[u8]) -> f64 {
     if data.is_empty() {
@@ -59,7 +59,6 @@ mod tests {
 
     #[test]
     fn test_max_entropy() {
-        // Uniform distribution approximation needs all bytes 0..255 ideally
         let mut data = Vec::new();
         for i in 0..=255 {
             data.push(i as u8);

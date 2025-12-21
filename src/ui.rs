@@ -1,10 +1,10 @@
 use ratatui::{
-    layout::{Constraint, Direction, Layout, Rect},
+    Frame,
+    layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     symbols,
     text::Span,
     widgets::{Axis, Block, Borders, Chart, Dataset, GraphType},
-    Frame,
 };
 
 use crate::app::App;
@@ -13,29 +13,51 @@ pub fn draw(f: &mut Frame, app: &App) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Min(0), Constraint::Length(1)].as_ref())
-        .split(f.size());
+        .split(f.area());
 
     let datasets = vec![
         Dataset::default()
-            .name("Entropy")
+            .name("EntUI")
             .marker(symbols::Marker::Braille)
             .graph_type(GraphType::Line)
             .style(Style::default().fg(Color::Cyan))
             .data(&app.entropy_data),
     ];
 
-    let x_labels = vec![
-        Span::raw(format!("{:.1}", app.window_start)),
-        Span::raw(format!("{:.1}", app.window_start + app.window_width / 2.0)),
-        Span::raw(format!("{:.1}", app.window_start + app.window_width)),
-    ];
+    let x_labels = if app.hex_mode {
+        vec![
+            Span::raw(format!("0x{:08x}", app.window_start as u64)),
+            Span::raw(format!(
+                "0x{:08x}",
+                app.window_start as u64 + app.window_width as u64 / 2
+            )),
+            Span::raw(format!(
+                "0x{:08x}",
+                app.window_start as u64 + app.window_width as u64
+            )),
+        ]
+    } else {
+        vec![
+            Span::raw(format!("{}", app.window_start as u64)),
+            Span::raw(format!(
+                "{}",
+                app.window_start as u64 + app.window_width as u64 / 2
+            )),
+            Span::raw(format!(
+                "{}",
+                app.window_start as u64 + app.window_width as u64
+            )),
+        ]
+    };
 
     let chart = Chart::new(datasets)
         .block(
             Block::default()
                 .title(Span::styled(
                     "Shannon Entropy",
-                    Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+                    Style::default()
+                        .fg(Color::Cyan)
+                        .add_modifier(Modifier::BOLD),
                 ))
                 .borders(Borders::ALL),
         )
@@ -52,20 +74,17 @@ pub fn draw(f: &mut Frame, app: &App) {
                 .style(Style::default().fg(Color::Gray))
                 .bounds([0.0, 8.0])
                 .labels(vec![
-                    Span::raw("0.0"),
-                    Span::raw("4.0"),
-                    Span::raw("8.0"),
+                    Span::raw("       0 "),
+                    Span::raw("       4 "),
+                    Span::raw("       8 "),
                 ]),
         );
 
     f.render_widget(chart, chunks[0]);
-    
-    let instructions = Span::raw("Commands: [-/+] Zoom | [Arrows] Scroll | [q] Quit");
-    f.render_widget(
-        Block::default().borders(Borders::NONE).title(""), 
-        chunks[1]
-    );
-    // Actually let's just put text in the bottom chunk
+
+    let instructions =
+        Span::raw("Commands: [-/+] Zoom | [Arrows] Scroll | [h] Toggle Hex Offsets | [q] Quit");
+    f.render_widget(Block::default().borders(Borders::NONE).title(""), chunks[1]);
     use ratatui::widgets::Paragraph;
     let p = Paragraph::new(instructions).style(Style::default().fg(Color::White));
     f.render_widget(p, chunks[1]);

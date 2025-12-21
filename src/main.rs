@@ -8,19 +8,17 @@ use clap::Parser;
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
-use ratatui::{backend::CrosstermBackend, Terminal};
+use ratatui::{Terminal, backend::CrosstermBackend};
 use std::{error::Error, io, path::PathBuf, time::Duration};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// File to analyze
-    #[arg(short, long)]
+    #[arg()]
     file: PathBuf,
 
-    /// Block size for entropy calculation
     #[arg(short, long, default_value_t = 256)]
     block_size: usize,
 }
@@ -28,25 +26,20 @@ struct Args {
 fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
 
-    // Check if file exists
     if !args.file.exists() {
         eprintln!("File not found: {:?}", args.file);
         return Ok(());
     }
 
-    // Setup terminal
     enable_raw_mode()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    // Create app
     let app = App::new(args.file, args.block_size);
-    
-    // Check for error in loading app (e.g. file read error)
+
     if let Err(e) = app {
-        // Restore terminal before printing error
         disable_raw_mode()?;
         execute!(
             terminal.backend_mut(),
@@ -56,12 +49,11 @@ fn main() -> Result<(), Box<dyn Error>> {
         eprintln!("Error analyzing file: {}", e);
         return Ok(());
     }
-    
+
     let mut app = app.unwrap();
 
     let res = run_app(&mut terminal, &mut app);
 
-    // Restore terminal
     disable_raw_mode()?;
     execute!(
         terminal.backend_mut(),
@@ -77,7 +69,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn run_app<B: ratatui::backend::Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<()> {
+fn run_app<B: ratatui::backend::Backend>(
+    terminal: &mut Terminal<B>,
+    app: &mut App,
+) -> io::Result<()> {
     loop {
         terminal.draw(|f| ui::draw(f, app))?;
 
@@ -90,13 +85,14 @@ fn run_app<B: ratatui::backend::Backend>(terminal: &mut Terminal<B>, app: &mut A
                     }
                     KeyCode::Left => app.on_left(),
                     KeyCode::Right => app.on_right(),
-                    KeyCode::Char('+') | KeyCode::Char('=') => app.on_zoom_in(),
-                    KeyCode::Char('-') | KeyCode::Char('_') => app.on_zoom_out(),
+                    KeyCode::Up | KeyCode::Char('+') | KeyCode::Char('=') => app.on_zoom_in(),
+                    KeyCode::Down | KeyCode::Char('-') | KeyCode::Char('_') => app.on_zoom_out(),
+                    KeyCode::Char('h') => app.hex_mode = !app.hex_mode,
                     _ => {}
                 }
             }
         }
-        
+
         if app.should_quit {
             return Ok(());
         }
