@@ -7,3 +7,9 @@
 * Entropy graph
 * Navigate using Left/Right arrow keys
 * Zoom using Up/Down arrow or +/- keys
+
+## Install
+
+```shell
+cargo install entui
+```
