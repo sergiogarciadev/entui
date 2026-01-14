@@ -72,9 +72,11 @@ fn main() -> Result<(), Box<dyn Error>> {
 fn run_app<B: ratatui::backend::Backend>(
     terminal: &mut Terminal<B>,
     app: &mut App,
-) -> io::Result<()> {
+) -> Result<()> {
     loop {
-        terminal.draw(|f| ui::draw(f, app))?;
+        if let Err(err) = terminal.draw(|f| ui::draw(f, app)) {
+          panic!("Terminal error: {}", err.to_string());
+        }
 
         if event::poll(Duration::from_millis(250))? {
             if let Event::Key(key) = event::read()? {
